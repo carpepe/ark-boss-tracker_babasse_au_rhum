@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ARK ASA – Tributs des boss de The Island</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f4f1ea;--card:#fff;--tx:#1f2a24;--mut:#6b7570;--bd:#dcd6c8;--ac:#c2410c;--ok:#15803d;--bar:#e7e2d6}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12171a;--card:#1b2227;--tx:#e8eee9;--mut:#93a09a;--bd:#2c363c;--ac:#fb923c;--ok:#4ade80;--bar:#2a343a}}
+:root[data-theme="dark"]{--bg:#12171a;--card:#1b2227;--tx:#e8eee9;--mut:#93a09a;--bd:#2c363c;--ac:#fb923c;--ok:#4ade80;--bar:#2a343a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:16px}
+h1{font-size:1.4rem;margin:.2em 0}
+.sub{color:var(--mut);margin:0 0 14px}
+.top{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.tabs{display:flex;gap:6px}
+button{font:inherit;cursor:pointer;color:var(--tx)}
+.tab{padding:7px 14px;border:1px solid var(--bd);background:var(--card);border-radius:8px}
+.tab.on{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:600}
+.reset{margin-left:auto;padding:7px 12px;border:1px solid var(--bd);background:transparent;border-radius:8px;color:var(--mut)}
+.total{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:14px}
+.bar{height:8px;background:var(--bar);border-radius:5px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--ac);transition:width .2s}
+.bar.ok i{background:var(--ok)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:12px}
+.card h2{font-size:1.05rem;margin:0;display:flex;justify-content:space-between;gap:8px}
+.badge{font-size:.75rem;color:var(--mut);font-weight:400}
+.badge.ok{color:var(--ok);font-weight:700}
+.row{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--bd)}
+.row:first-of-type{margin-top:8px}
+.row .n{flex:1}
+.row.done .n{color:var(--ok)}
+.row .art{font-size:.7rem;color:var(--mut);display:block}
+.ctl{display:flex;align-items:center;gap:4px}
+.ctl button{width:28px;height:28px;border:1px solid var(--bd);background:var(--bg);border-radius:6px;font-size:1rem;line-height:1}
+.ctl span{min-width:48px;text-align:center;font-variant-numeric:tabular-nums}
+.note{color:var(--mut);font-size:.8rem;margin-top:16px}
+</style></head>
+<body><main>
+<h1>🦖 Tributs des boss – The Island (ASA)</h1>
+<p class="sub">Coche ce que tu as déjà : le site calcule ce qu'il te reste à farmer pour chaque boss.</p>
+<div class="top"><div class="tabs" id="tabs"></div><button class="reset" id="reset">Tout remettre à zéro</button></div>
+<div class="total" id="total"></div>
+<div class="grid" id="grid"></div>
+<p class="note">Quantités d'après l'ARK Wiki (tableau des tributs). Les noms d'objets sont en anglais ; vérifie en jeu, certaines valeurs peuvent évoluer avec les patchs. Les tributs ne se transfèrent pas entre serveurs. Ta progression est sauvegardée dans ton navigateur.</p>
+</main>
+<script>
+// [nom, gamma, beta, alpha, artefact?]
+const A=(n)=>[n,1,1,1,1];
+const BOSSES=[
+{n:"🕷️ Broodmother Lysrix",items:[A("Artifact of the Hunter"),A("Artifact of the Massive"),A("Artifact of the Clever"),
+ ["Argentavis Talon",0,5,10],["Sauropod Vertebra",0,5,10],["Sarcosuchus Skin",0,5,10],["Titanoboa Venom",0,5,10]]},
+{n:"🦍 Megapithecus",items:[A("Artifact of the Pack"),A("Artifact of the Devourer"),A("Artifact of the Brute"),
+ ["Spinosaurus Sail",0,5,10],["Megalania Toxin",0,5,10],["Thylacoleo Hook-Claw",0,5,10],["Megalodon Tooth",0,5,10],["Therizino Claws",0,5,10]]},
+{n:"🐉 Dragon",items:[A("Artifact of the Skylord"),A("Artifact of the Immune"),A("Artifact of the Strong"),A("Artifact of the Cunning"),
+ ["Tusoteuthis Tentacle",0,5,10],["Basilosaurus Blubber",0,5,10],["Giganotosaurus Heart",0,1,2],["Tyrannosaurus Arm",0,5,15],["Allosaurus Brain",0,5,10],["Yutyrannus Lungs",0,5,10]]},
+{n:"🤖 Overseer (ascension)",items:[["TROPHY:Broodmother",1,1,1],["TROPHY:Megapithecus",1,1,1],["TROPHY:Dragon",1,1,1],
+ ["Alpha Raptor Claw",0,1,1],["Alpha Carnotaurus Arm",0,1,1],["Alpha Megalodon Fin",0,0,1],["Alpha Mosasaur Tooth",0,0,1],["Alpha Tusoteuthis Eye",0,0,1],["Alpha Leedsichthys Blubber",0,0,1]]}
+];
+const TIERS=["Gamma","Beta","Alpha"];
+let st={tier:2,have:{}};
+try{const s=JSON.parse(localStorage.getItem("ark-asa-tracker")||"null");if(s&&s.have)st=s}catch(e){}
+const save=()=>{try{localStorage.setItem("ark-asa-tracker",JSON.stringify(st))}catch(e){}};
+const $=id=>document.getElementById(id);
+function list(b){return b.items.map(it=>{
+ const need=it[st.tier+1];if(!need)return null;
+ const name=it[0].startsWith("TROPHY:")?"Trophée "+TIERS[st.tier]+" "+it[0].slice(7):it[0];
+ return{key:st.tier+"|"+b.n+"|"+it[0],name,need,art:it[4]===1}}).filter(Boolean)}
+function render(){
+ $("tabs").innerHTML=TIERS.map((t,i)=>`<button class="tab ${i==st.tier?"on":""}" data-t="${i}">${t}</button>`).join("");
+ let tn=0,th=0;
+ $("grid").innerHTML=BOSSES.map((b,bi)=>{
+  const L=list(b);let n=0,h=0;
+  const rows=L.map(x=>{const v=Math.min(st.have[x.key]||0,x.need);n+=x.need;h+=v;
+   return`<div class="row ${v>=x.need?"done":""}"><div class="n">${x.name}${x.art?'<span class="art">Artefact (grotte)</span>':""}</div>
+   <div class="ctl"><button data-k="${x.key}" data-d="-1" data-m="${x.need}">−</button><span>${v} / ${x.need}</span><button data-k="${x.key}" data-d="1" data-m="${x.need}">+</button></div></div>`}).join("");
+  tn+=n;th+=h;const ok=h>=n;
+  return`<div class="card"><h2>${b.n}<span class="badge ${ok?"ok":""}">${ok?"✔ Prêt":(n-h)+" restants"}</span></h2>
+  <div class="bar ${ok?"ok":""}"><i style="width:${n?h/n*100:0}%"></i></div>${rows}</div>`}).join("");
+ const p=tn?Math.round(th/tn*100):0;
+ $("total").innerHTML=`<b>Progression ${TIERS[st.tier]} : ${p}%</b> <span class="badge">(${th} / ${tn} objets)</span><div class="bar ${p==100?"ok":""}"><i style="width:${p}%"></i></div>`;
+}
+document.addEventListener("click",e=>{
+ const t=e.target.closest("button");if(!t)return;
+ if(t.dataset.t!==undefined){st.tier=+t.dataset.t}
+ else if(t.dataset.k){const k=t.dataset.k;st.have[k]=Math.max(0,Math.min(+t.dataset.m,(st.have[k]||0)+ +t.dataset.d))}
+ else if(t.id==="reset"){if(confirm("Remettre toute la progression à zéro ?"))st.have={};else return}
+ else return;
+ save();render()});
+render();
+</script></body></html>
