@@ -3,11 +3,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ARK ASA – Tributs des boss de The Island</title>
 <style>
-:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
---bg:#f4f1ea;--card:#fff;--tx:#1f2a24;--mut:#6b7570;--bd:#dcd6c8;--ac:#c2410c;--ok:#15803d;--bar:#e7e2d6}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12171a;--card:#1b2227;--tx:#e8eee9;--mut:#93a09a;--bd:#2c363c;--ac:#fb923c;--ok:#4ade80;--bar:#2a343a}}
-:root[data-theme="dark"]{--bg:#12171a;--card:#1b2227;--tx:#e8eee9;--mut:#93a09a;--bd:#2c363c;--ac:#fb923c;--ok:#4ade80;--bar:#2a343a}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
+:root{box-sizing:border-box;--bg:#f4f1ea;--card:#fff;--tx:#1f2a24;--mut:#6b7570;--bd:#dcd6c8;--ac:#c2410c;--ok:#15803d;--bar:#e7e2d6;--warn:#b45309}
+@media (prefers-color-scheme:dark){:root{--bg:#12171a;--card:#1b2227;--tx:#e8eee9;--mut:#93a09a;--bd:#2c363c;--ac:#fb923c;--ok:#4ade80;--bar:#2a343a;--warn:#fbbf24}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
 main{max-width:1000px;margin:0 auto;padding:16px}
@@ -18,7 +15,9 @@ h1{font-size:1.4rem;margin:.2em 0}
 button{font:inherit;cursor:pointer;color:var(--tx)}
 .tab{padding:7px 14px;border:1px solid var(--bd);background:var(--card);border-radius:8px}
 .tab.on{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:600}
-.reset{margin-left:auto;padding:7px 12px;border:1px solid var(--bd);background:transparent;border-radius:8px;color:var(--mut)}
+.status{margin-left:auto;font-size:.8rem;color:var(--mut)}
+.status.err{color:var(--warn)}
+.reset{padding:7px 12px;border:1px solid var(--bd);background:transparent;border-radius:8px;color:var(--mut)}
 .total{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:14px}
 .bar{height:8px;background:var(--bar);border-radius:5px;overflow:hidden;margin-top:6px}
 .bar i{display:block;height:100%;background:var(--ac);transition:width .2s}
@@ -34,20 +33,34 @@ button{font:inherit;cursor:pointer;color:var(--tx)}
 .row.done .n{color:var(--ok)}
 .row .art{font-size:.7rem;color:var(--mut);display:block}
 .ctl{display:flex;align-items:center;gap:4px}
-.ctl button{width:28px;height:28px;border:1px solid var(--bd);background:var(--bg);border-radius:6px;font-size:1rem;line-height:1}
+.ctl button{width:30px;height:30px;border:1px solid var(--bd);background:var(--bg);border-radius:6px;font-size:1rem;line-height:1}
 .ctl span{min-width:48px;text-align:center;font-variant-numeric:tabular-nums}
 .note{color:var(--mut);font-size:.8rem;margin-top:16px}
 </style></head>
 <body><main>
 <h1>🦖 Tributs des boss – The Island (ASA)</h1>
-<p class="sub">Coche ce que tu as déjà : le site calcule ce qu'il te reste à farmer pour chaque boss.</p>
-<div class="top"><div class="tabs" id="tabs"></div><button class="reset" id="reset">Tout remettre à zéro</button></div>
+<p class="sub">Liste commune de la tribu : chaque modification est visible en direct par tous les membres.</p>
+<div class="top"><div class="tabs" id="tabs"></div><span class="status" id="status">Connexion…</span><button class="reset" id="reset">Tout remettre à zéro</button></div>
 <div class="total" id="total"></div>
 <div class="grid" id="grid"></div>
-<p class="note">Quantités d'après l'ARK Wiki (tableau des tributs). Les noms d'objets sont en anglais ; vérifie en jeu, certaines valeurs peuvent évoluer avec les patchs. Les tributs ne se transfèrent pas entre serveurs. Ta progression est sauvegardée dans ton navigateur.</p>
+<p class="note">Quantités d'après l'ARK Wiki. Noms d'objets en anglais ; vérifie en jeu, certaines valeurs peuvent évoluer avec les patchs. Attention : « Tout remettre à zéro » efface la progression pour toute la tribu.</p>
 </main>
-<script>
-// [nom, gamma, beta, alpha, artefact?]
+
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getFirestore,doc,onSnapshot,runTransaction,setDoc} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* ====== COLLE ICI TA CONFIG FIREBASE (remplace tout le bloc ci-dessous) ====== */
+const firebaseConfig = {
+  apiKey: "AIzaSyAq0lpRHve4nNMCN53lkXflw-HF1hc10nM",
+  authDomain: "ark-tribu.firebaseapp.com",
+  projectId: "ark-tribu",
+  storageBucket: "ark-tribu.firebasestorage.app",
+  messagingSenderId: "711210074570",
+  appId: "1:711210074570:web:187dcfefd5e7488657cf33"
+};
+/* ============================================================================= */
+
 const A=(n)=>[n,1,1,1,1];
 const BOSSES=[
 {n:"🕷️ Broodmother Lysrix",items:[A("Artifact of the Hunter"),A("Artifact of the Massive"),A("Artifact of the Clever"),
@@ -60,34 +73,71 @@ const BOSSES=[
  ["Alpha Raptor Claw",0,1,1],["Alpha Carnotaurus Arm",0,1,1],["Alpha Megalodon Fin",0,0,1],["Alpha Mosasaur Tooth",0,0,1],["Alpha Tusoteuthis Eye",0,0,1],["Alpha Leedsichthys Blubber",0,0,1]]}
 ];
 const TIERS=["Gamma","Beta","Alpha"];
-let st={tier:2,have:{}};
-try{const s=JSON.parse(localStorage.getItem("ark-asa-tracker")||"null");if(s&&s.have)st=s}catch(e){}
-const save=()=>{try{localStorage.setItem("ark-asa-tracker",JSON.stringify(st))}catch(e){}};
 const $=id=>document.getElementById(id);
-function list(b){return b.items.map(it=>{
- const need=it[st.tier+1];if(!need)return null;
- const name=it[0].startsWith("TROPHY:")?"Trophée "+TIERS[st.tier]+" "+it[0].slice(7):it[0];
- return{key:st.tier+"|"+b.n+"|"+it[0],name,need,art:it[4]===1}}).filter(Boolean)}
+
+let tier=2; let have={};
+try{const t=localStorage.getItem("ark-asa-tier");if(t!==null)tier=+t}catch(e){}
+
+const configured=!firebaseConfig.apiKey.startsWith("COLLE");
+let ref=null;
+function setStatus(txt,err){const s=$("status");s.textContent=txt;s.className="status"+(err?" err":"")}
+
+if(configured){
+  try{
+    const db=getFirestore(initializeApp(firebaseConfig));
+    ref=doc(db,"tribe","progress");
+    onSnapshot(ref,snap=>{have=(snap.exists()&&snap.data().have)||{};setStatus("🟢 Synchronisé avec la tribu");render()},
+      err=>{console.error(err);setStatus("🔴 Erreur de synchronisation (vérifie les règles Firestore)",true)});
+  }catch(e){console.error(e);setStatus("🔴 Config Firebase invalide",true)}
+}else{
+  setStatus("⚠️ Firebase non configuré : mode local uniquement",true);
+  try{have=JSON.parse(localStorage.getItem("ark-asa-local")||"{}")}catch(e){}
+}
+
+function list(b,bi){const out=[];b.items.forEach((it,ii)=>{
+ const need=it[tier+1];if(!need)return;
+ const name=it[0].startsWith("TROPHY:")?"Trophée "+TIERS[tier]+" "+it[0].slice(7):it[0];
+ out.push({key:tier+"_"+bi+"_"+ii,name,need,art:it[4]===1})});return out}
+
 function render(){
- $("tabs").innerHTML=TIERS.map((t,i)=>`<button class="tab ${i==st.tier?"on":""}" data-t="${i}">${t}</button>`).join("");
+ $("tabs").innerHTML=TIERS.map((t,i)=>`<button class="tab ${i==tier?"on":""}" data-t="${i}">${t}</button>`).join("");
  let tn=0,th=0;
  $("grid").innerHTML=BOSSES.map((b,bi)=>{
-  const L=list(b);let n=0,h=0;
-  const rows=L.map(x=>{const v=Math.min(st.have[x.key]||0,x.need);n+=x.need;h+=v;
+  const L=list(b,bi);let n=0,h=0;
+  const rows=L.map(x=>{const v=Math.min(have[x.key]||0,x.need);n+=x.need;h+=v;
    return`<div class="row ${v>=x.need?"done":""}"><div class="n">${x.name}${x.art?'<span class="art">Artefact (grotte)</span>':""}</div>
    <div class="ctl"><button data-k="${x.key}" data-d="-1" data-m="${x.need}">−</button><span>${v} / ${x.need}</span><button data-k="${x.key}" data-d="1" data-m="${x.need}">+</button></div></div>`}).join("");
   tn+=n;th+=h;const ok=h>=n;
   return`<div class="card"><h2>${b.n}<span class="badge ${ok?"ok":""}">${ok?"✔ Prêt":(n-h)+" restants"}</span></h2>
   <div class="bar ${ok?"ok":""}"><i style="width:${n?h/n*100:0}%"></i></div>${rows}</div>`}).join("");
  const p=tn?Math.round(th/tn*100):0;
- $("total").innerHTML=`<b>Progression ${TIERS[st.tier]} : ${p}%</b> <span class="badge">(${th} / ${tn} objets)</span><div class="bar ${p==100?"ok":""}"><i style="width:${p}%"></i></div>`;
+ $("total").innerHTML=`<b>Progression ${TIERS[tier]} : ${p}%</b> <span class="badge">(${th} / ${tn} objets)</span><div class="bar ${p==100?"ok":""}"><i style="width:${p}%"></i></div>`;
 }
-document.addEventListener("click",e=>{
+
+async function change(k,d,max){
+ const prev=have[k]||0, next=Math.max(0,Math.min(max,prev+d));
+ if(next===prev)return;
+ have[k]=next;render();            // affichage immédiat
+ if(!ref){try{localStorage.setItem("ark-asa-local",JSON.stringify(have))}catch(e){}return}
+ try{
+  await runTransaction(ref.firestore,async tx=>{
+   const s=await tx.get(ref);
+   const cur=(s.exists()&&s.data().have&&s.data().have[k])||0;
+   tx.set(ref,{have:{[k]:Math.max(0,Math.min(max,cur+d))}},{merge:true});
+  });
+ }catch(e){console.error(e);setStatus("🔴 Modification non enregistrée",true)}
+}
+
+document.addEventListener("click",async e=>{
  const t=e.target.closest("button");if(!t)return;
- if(t.dataset.t!==undefined){st.tier=+t.dataset.t}
- else if(t.dataset.k){const k=t.dataset.k;st.have[k]=Math.max(0,Math.min(+t.dataset.m,(st.have[k]||0)+ +t.dataset.d))}
- else if(t.id==="reset"){if(confirm("Remettre toute la progression à zéro ?"))st.have={};else return}
- else return;
- save();render()});
+ if(t.dataset.t!==undefined){tier=+t.dataset.t;try{localStorage.setItem("ark-asa-tier",tier)}catch(x){}render()}
+ else if(t.dataset.k){change(t.dataset.k,+t.dataset.d,+t.dataset.m)}
+ else if(t.id==="reset"){
+  if(!confirm("Remettre à zéro la progression de TOUTE la tribu ?"))return;
+  have={};render();
+  if(ref){try{await setDoc(ref,{have:{}})}catch(x){setStatus("🔴 Reset impossible",true)}}
+  else{try{localStorage.removeItem("ark-asa-local")}catch(x){}}
+ }
+});
 render();
 </script></body></html>
